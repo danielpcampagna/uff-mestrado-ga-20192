@@ -6,6 +6,7 @@
 # 13 May 2002
 
 # import necessary modules
+import checkbox
 import pygame
 from pygame.locals import *
 
@@ -14,10 +15,81 @@ XO   = "X"   # track whose turn it is; X goes first
 grid = [ [ None, None, None ], \
          [ None, None, None ], \
          [ None, None, None ] ]
-
+running = True
 winner = None
 
+def button(board, msg, x, y, w, h, action=None):
+    def text_objects(text, font):
+        black = (0,0,0)
+        textSurface = font.render(text, True, black)
+        return textSurface, textSurface.get_rect()
+    
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    if x+w > mouse[0] > x and y+h > mouse[1] > y:
+        # pygame.draw.rect(board, ac,(x,y,w,h))
+        if click[0] == 1 and action != None:
+            action()
+    #     pygame.draw.rect(board, ic,(x,y,w,h))
+
+    smallText = pygame.font.Font("freesansbold.ttf",20)
+    textSurf, textRect = text_objects(msg, smallText)
+    textRect.center = ( (x+(w/2)), (y+(h/2)) )
+    board.blit(textSurf, textRect)
+
 # declare our support functions
+def text_to_screen(screen, text, x, y, size = 50,
+            color = (200, 000, 000), font_type = 'data/fonts/orecrusherexpand.ttf'):
+    try:
+
+        text = str(text)
+        font = pygame.font.Font(None, size)
+        text = font.render(text, True, color)
+        screen.blit(text, (x, y))
+
+    except Exception as e:
+        print('Font Error, saw it coming')
+        raise e
+
+def gdprConcents(ttt):
+    
+    p1_cb = checkbox.Checkbox(ttt, 80, 150, caption='Player 1 consent', text_offset=(75,1))
+    p2_cb = checkbox.Checkbox(ttt, 80, 170, caption='Player 2 consent', text_offset=(75,1))
+
+    board  = pygame.Surface (ttt.get_size())
+    board  = board.convert()
+    board.fill ((250, 250, 250))
+
+    global running
+    running = True
+    def pclick():
+        global running
+        running = False
+    a, b = 0, 0
+    while running:
+        # print(running)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                quit()
+            # print(event.__dict__)
+            # if (event.)
+            p1_cb.update_checkbox(event)
+            p2_cb.update_checkbox(event)
+        board.fill ((250, 250, 250))
+        
+        text_to_screen(board, 'GDPR compliance', 55, 10, size=32)
+
+        button(board, 'Continue',130,290,30,30,pclick)
+        
+        ttt.blit (board, (0, 0))
+        p1_cb.render_checkbox()
+        p2_cb.render_checkbox()
+        pygame.display.flip()
+
+    print(p1_cb.is_checked(), p2_cb.is_checked())
 
 def initBoard(ttt):
     # initialize the board and return it as a variable
@@ -195,8 +267,10 @@ pygame.init()
 ttt = pygame.display.set_mode ((300, 325))
 pygame.display.set_caption ('Tic-Tac-Toe')
 
+gdprConcents(ttt)
 # create the game board
 board = initBoard (ttt)
+
 
 # main event loop
 running = 1
