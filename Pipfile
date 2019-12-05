@@ -7,7 +7,6 @@ verify_ssl = true
 
 [packages]
 pygame = "*"
-pygameguilib = "*"
 
 [requires]
 python_version = "3.5"
