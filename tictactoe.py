@@ -10,14 +10,6 @@ import checkbox
 import pygame
 from pygame.locals import *
 
-# declare our global variables for the game
-XO   = "X"   # track whose turn it is; X goes first
-grid = [ [ None, None, None ], \
-         [ None, None, None ], \
-         [ None, None, None ] ]
-running = True
-winner = None
-
 def button(board, msg, x, y, w, h, action=None):
     def text_objects(text, font):
         black = (0,0,0)
@@ -54,8 +46,8 @@ def text_to_screen(screen, text, x, y, size = 50,
 
 def gdprConcents(ttt):
     
-    p1_cb = checkbox.Checkbox(ttt, 80, 150, caption='Player 1 consent', text_offset=(75,1))
-    p2_cb = checkbox.Checkbox(ttt, 80, 170, caption='Player 2 consent', text_offset=(75,1))
+    p1_cb = checkbox.Checkbox(ttt, 80, 150, caption='Player X consent', text_offset=(75,1))
+    p2_cb = checkbox.Checkbox(ttt, 80, 170, caption='Player O consent', text_offset=(75,1))
 
     board  = pygame.Surface (ttt.get_size())
     board  = board.convert()
@@ -113,14 +105,14 @@ def initBoard(ttt):
     # return the board
     return background
 
-def drawStatus (board):
+def drawStatus (ctx):
     # draw the status (i.e., player turn, etc) at the bottom of the board
     # ---------------------------------------------------------------
     # board : the initialized game board surface where the status will
     #         be drawn
 
     # gain access to global variables
-    global XO, winner
+    XO, winner = ctx['XO'], ctx['winner']
 
     # determine the status message
     if (winner is None):
@@ -136,17 +128,17 @@ def drawStatus (board):
     board.fill ((250, 250, 250), (0, 300, 300, 25))
     board.blit(text, (10, 300))
 
-def showBoard (ttt, board):
+def showBoard(ctx):
     # redraw the game board on the display
     # ---------------------------------------------------------------
     # ttt   : the initialized pyGame display
     # board : the game board surface
-
-    drawStatus (board)
-    ttt.blit (board, (0, 0))
+    ttt, board = ctx['ttt'], ctx['board']
+    drawStatus(ctx)
+    ttt.blit(board, (0, 0))
     pygame.display.flip()
     
-def boardPos (mouseX, mouseY):
+def boardPos(mouseX, mouseY):
     # given a set of coordinates from the mouse, determine which board space
     # (row, column) the user clicked in.
     # ---------------------------------------------------------------
@@ -195,17 +187,16 @@ def drawMove (board, boardRow, boardCol, Piece):
 
     # mark the space as used
     grid [boardRow][boardCol] = Piece
-    
-def clickBoard(board):
+
+def clickBoard(ctx):
     # determine where the user clicked and if the space is not already
     # occupied, draw the appropriate piece there (X or O)
     # ---------------------------------------------------------------
     # board : the game board surface
-    
-    global grid, XO
+    board, grid, OX = ctx['board'], ctx['grid'], ctx['XO']
     
     (mouseX, mouseY) = pygame.mouse.get_pos()
-    (row, col) = boardPos (mouseX, mouseY)
+    (row, col) = boardPos(mouseX, mouseY)
 
     # make sure no one's used this space
     if ((grid[row][col] == "X") or (grid[row][col] == "O")):
@@ -213,7 +204,7 @@ def clickBoard(board):
         return
 
     # draw an X or O
-    drawMove (board, row, col, XO)
+    drawMove(board, row, col, XO)
 
     # toggle XO to the other player's move
     if (XO == "X"):
@@ -221,20 +212,19 @@ def clickBoard(board):
     else:
         XO = "X"
     
-def gameWon(board):
+def gameWon(ctx):
     # determine if anyone has won the game
     # ---------------------------------------------------------------
     # board : the game board surface
-    
-    global grid, winner
+    board, grid, winner = ctx['board'], ctx['grid'], ctx['winner']
 
     # check for winning rows
     for row in range (0, 3):
         if ((grid [row][0] == grid[row][1] == grid[row][2]) and \
            (grid [row][0] is not None)):
             # this row won
-            winner = grid[row][0]
-            pygame.draw.line (board, (250,0,0), (0, (row + 1)*100 - 50), \
+            ctx['winner'] = winner = grid[row][0]
+            pygame.draw.line(board, (250,0,0), (0, (row + 1)*100 - 50), \
                               (300, (row + 1)*100 - 50), 2)
             break
 
@@ -243,8 +233,8 @@ def gameWon(board):
         if (grid[0][col] == grid[1][col] == grid[2][col]) and \
            (grid[0][col] is not None):
             # this column won
-            winner = grid[0][col]
-            pygame.draw.line (board, (250,0,0), ((col + 1)* 100 - 50, 0), \
+            ctx['winner'] = winner = grid[0][col]
+            pygame.draw.line(board, (250,0,0), ((col + 1)* 100 - 50, 0), \
                               ((col + 1)* 100 - 50, 300), 2)
             break
 
@@ -252,14 +242,14 @@ def gameWon(board):
     if (grid[0][0] == grid[1][1] == grid[2][2]) and \
        (grid[0][0] is not None):
         # game won diagonally left to right
-        winner = grid[0][0]
-        pygame.draw.line (board, (250,0,0), (50, 50), (250, 250), 2)
+        ctx['winner'] = winner = grid[0][0]
+        pygame.draw.line(board, (250,0,0), (50, 50), (250, 250), 2)
 
     if (grid[0][2] == grid[1][1] == grid[2][0]) and \
        (grid[0][2] is not None):
         # game won diagonally right to left
-        winner = grid[0][2]
-        pygame.draw.line (board, (250,0,0), (250, 50), (50, 250), 2)
+        ctx['winner'] = winner = grid[0][2]
+        pygame.draw.line(board, (250,0,0), (250, 50), (50, 250), 2)
 
 # --------------------------------------------------------------------
 # initialize pygame and our window
@@ -271,7 +261,17 @@ gdprConcents(ttt)
 # create the game board
 board = initBoard (ttt)
 
-
+ctx = {
+    # declare our global variables for the game
+    'XO': "X",   # track whose turn it is; X goes first
+    'grid': [ [ None, None, None ],
+            [ None, None, None ],
+            [ None, None, None ] ],
+    'running': True,
+    'winner': None,
+    'board': board,
+    'ttt': ttt
+}
 # main event loop
 running = 1
 
@@ -281,10 +281,10 @@ while (running == 1):
             running = 0
         elif event.type is MOUSEBUTTONDOWN:
             # the user clicked; place an X or O
-            clickBoard(board)
+            clickBoard(ctx)
 
         # check for a winner
         gameWon (board)
 
         # update the display
-        showBoard (ttt, board)
+        showBoard(ctx)

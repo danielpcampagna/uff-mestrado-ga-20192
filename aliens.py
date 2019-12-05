@@ -28,6 +28,7 @@ import os
 
 # import basic pygame modules
 import pygame as pg
+from telemetry import Telemetry
 
 # see if we can load more than standard BMP
 if not pg.image.get_extended():
@@ -81,20 +82,22 @@ def load_sound(file):
 class Player(pg.sprite.Sprite):
     """ Representing the player as a moon buggy type car.
     """
-
+    player_name = None
     speed = 10
     bounce = 24
     gun_offset = -11
     images = []
 
-    def __init__(self):
+    def __init__(self, player_name):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
         self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
         self.reloading = 0
         self.origtop = self.rect.top
         self.facing = -1
+        self.player_name = player_name
 
+    @Telemetry.collect_telemetry_on_move
     def move(self, direction):
         if direction:
             self.facing = direction
@@ -173,6 +176,7 @@ class Shot(pg.sprite.Sprite):
     speed = -11
     images = []
 
+    @Telemetry.collect_telemetry_shot
     def __init__(self, pos):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
@@ -186,7 +190,6 @@ class Shot(pg.sprite.Sprite):
         self.rect.move_ip(0, self.speed)
         if self.rect.top <= 0:
             self.kill()
-
 
 class Bomb(pg.sprite.Sprite):
     """ A bomb the aliens drop.
@@ -214,6 +217,10 @@ class Bomb(pg.sprite.Sprite):
             Explosion(self)
             self.kill()
 
+    @Telemetry.collect_telemetry_kill
+    def kill(self):
+        super().kill()
+
 
 class Score(pg.sprite.Sprite):
     """ to keep track of the score.
@@ -227,17 +234,24 @@ class Score(pg.sprite.Sprite):
         self.lastscore = -1
         self.update()
         self.rect = self.image.get_rect().move(10, 450)
-
+    
     def update(self):
         """ We only update the score in update() when it has changed.
         """
         if SCORE != self.lastscore:
-            self.lastscore = SCORE
-            msg = "Score: %d" % SCORE
-            self.image = self.font.render(msg, 0, self.color)
+            self._update()
+
+    @Telemetry.collect_telemetry_score
+    def _update(self):
+        self.lastscore = SCORE
+        msg = "Score: %d" % SCORE
+        self.image = self.font.render(msg, 0, self.color)
 
 
 def main(winstyle=0):
+    from gdpr_consents import gdpr_concents
+    player_name, consent = gdpr_concents()
+    
     # Initialize pygame
     if pg.get_sdl_version()[0] == 2:
         pg.mixer.pre_init(44100, 32, 2, 1024)
@@ -307,7 +321,7 @@ def main(winstyle=0):
 
     # initialize our starting sprites
     global SCORE
-    player = Player()
+    player = Player(player_name)
     Alien()  # note, this 'lives' because it goes into a sprite group
     if pg.font:
         all.add(Score())
