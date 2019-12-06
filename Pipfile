@@ -4,9 +4,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+graphviz = "*"
 
 [packages]
 pygame = "*"
+gdpr-prov-decorators = "==1.0.29"
 
 [requires]
 python_version = "3.5"

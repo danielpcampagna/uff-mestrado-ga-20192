@@ -97,7 +97,7 @@ class Player(pg.sprite.Sprite):
         self.facing = -1
         self.player_name = player_name
 
-    @Telemetry.collect_telemetry_on_move
+    # @Telemetry.collect_telemetry_on_move
     def move(self, direction):
         if direction:
             self.facing = direction
@@ -251,6 +251,8 @@ class Score(pg.sprite.Sprite):
 def main(winstyle=0):
     from gdpr_consents import gdpr_concents
     player_name, consent = gdpr_concents()
+    Telemetry(player_name, consent)
+
     
     # Initialize pygame
     if pg.get_sdl_version()[0] == 2:
@@ -353,7 +355,7 @@ def main(winstyle=0):
                         screen.blit(screen_backup, (0, 0))
                     pg.display.flip()
                     fullscreen = not fullscreen
-
+       
         keystate = pg.key.get_pressed()
 
         # clear/erase the last drawn sprites
@@ -407,13 +409,15 @@ def main(winstyle=0):
             Explosion(bomb)
             player.kill()
 
+        fps = pg.font.Font(None, 30).render(str(int(clock.get_fps())), True, pg.Color('white'))
+        screen.blit(fps, (50, 50))
+
         # draw the scene
         dirty = all.draw(screen)
         pg.display.update(dirty)
 
         # cap the framerate at 40fps. Also called 40HZ or 40 times per second.
         clock.tick(40)
-
     if pg.mixer:
         pg.mixer.music.fadeout(1000)
     pg.time.wait(1000)
